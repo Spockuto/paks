@@ -1,0 +1,33 @@
+{
+  "name": "PAKS",
+  "version": "1.0.0",
+  "description": "Password Authenticated Keyword Search",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Venkkatesh Sekar",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "*",
+    "body-parser": "*",
+    "connect-flash": "*",
+    "cookie-parser": "^1.4.1",
+    "cors": "^2.8.3",
+    "eccjs": "^0.3.1",
+    "express": "*",
+    "express-handlebars": "*",
+    "express-messages": "*",
+    "express-session": "*",
+    "express-validator": "*",
+    "mongodb": "*",
+    "mongoose": "^4.11.0",
+    "node-cache": "^4.1.1",
+    "passport": "*",
+    "passport-http": "*",
+    "passport-local": "*",
+    "request": "^2.81.0",
+    "requestretry": "^1.12.0"
+  }
+}
