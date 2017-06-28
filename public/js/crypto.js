@@ -90,6 +90,9 @@ function outsourced(data){
 	var word  = data.tag;
 	var email = data.email;
 	var ix = data.data;
+	var number, pieces;
+    number = Math.ceil(Math.random() * (ix.length - 1));
+    pieces = [ix.substring(number, -number), ix.substring(number)];
 
 	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
 	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
@@ -98,18 +101,23 @@ function outsourced(data){
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
 				var t = ecc.sjcl.misc.cachedPbkdf2(K.x.toLocaleString() + word);
-				var temp = ecc.sjcl.encrypt(t.key,  ecc.sjcl.codec.hex.fromBits(e));
-				var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.codec.base64.toBits(JSON.parse(temp).ct)).substring(0,64);
+
+				var prp = new ecc.sjcl.cipher.aes(t.key);
+				var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, e.toBits(), "")).substring(0,64);			
 				var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
-				var myuc = Tag(mku, e.toLocaleString() + v + ix);
+				var myuc0 = Tag(mku, e.toLocaleString() + v + pieces[0]);
+				var myuc1 = Tag(mku, e.toLocaleString() + v + pieces[1]);
 				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
-				var C = e.toLocaleString() + "," + v + "," + myuc;
-				var myusk0 = Tag(sk0.key, C + ix);
-				var myusk1 = Tag(sk1.key, C + ix);
+				var C0 = e.toLocaleString() + "," + v + "," + myuc0;
+				var C1 = e.toLocaleString() + "," + v + "," + myuc1;
+				var myusk0 = Tag(sk0.key, C0 + pieces[0]);
+				var myusk1 = Tag(sk1.key, C1 + pieces[1]);
 				var result =  new Object();
-				result.c = C;
-				result.ix = ix;
+				result.c0 = C0;
+				result.ix0 = pieces[0];
+				result.c1 = C1;
+				result.ix1 = pieces[1];
  				result.myusk0 = myusk0;
 				result.myusk1 = myusk1;
 				result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
@@ -125,10 +133,49 @@ function outsourced(data){
 	}
 }
 
-function retriveState1(){
+function retrieveState1(data){
+	var e = new ecc.sjcl.bn.random(ecc.sjcl.ecc.curves.c256.r, 10);
+	var Y = Point(data.server0.y);
+	var Z0 = Point(data.server0.zd);
+	var Z1 = Point(data.server1.zd);
+	var myu0 = data.server0.myud;
+	var myu1 = data.server1.myud;
+	var A = Point(data.a);
+	var word  = data.tag;
+	var email = data.email;
+
+	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
+	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
+	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
+	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
+
+	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
+		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
+				var t = ecc.sjcl.misc.cachedPbkdf2(K.x.toLocaleString() + word);
+				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
+				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
+				var myusk0 = Tag(sk0.key, ecc.sjcl.codec.hex.fromBits(t.key));
+				var myusk1 = Tag(sk1.key, ecc.sjcl.codec.hex.fromBits(t.key));
+				var result =  new Object();
+				result.t = ecc.sjcl.codec.hex.fromBits(t.key);
+ 				result.myusk0 = myusk0;
+				result.myusk1 = myusk1;
+				result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
+				result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
+				return result;
+		}
+		else{
+			return {result : "Tag 1 Verify Failed"};
+		}
+	}
+	else{
+		return {result : "Tag 2 Verify Failed"};
+	}
 
 }
 
-function retriveState2(){
+function retriveState2(data){	
+	var server0 = data.server0;
+	var server1 = data.server1;
 
 }

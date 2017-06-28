@@ -22,6 +22,6 @@ module.exports.StorageUser = function(Storage, callback){
 
 module.exports.getStorageByEmail = function(email, callback){
 	var query = {email: email};
-	Storage.findOne(query, callback);
+	Storage.find(query, callback);
 }
 

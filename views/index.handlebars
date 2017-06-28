@@ -1,18 +1,40 @@
-<h2 class="page-header">Dashboard</h2>
-<p>Welcome to your dashboard</p>  
-<form method="post" id="outsource">
-  <div class="form-group">
-  	<label for="comment">Data</label>
-  	<textarea id="data" class="form-control" rows="5" id="data" name="data"></textarea>
+<div class="row">
+  <div class="col-md-6">
+  <h2 class="page-header">Outsource</h2>
+    <form method="post" id="outsource">
+      <div class="form-group">
+        <label for="comment">Data</label>
+        <textarea id="data" class="form-control" rows="5" id="data" name="data"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tag</label>
+        <input id="tag" type="text" class="form-control" name="tag" placeholder="text">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="password" type="password" class="form-control" name="password" placeholder="Password">
+      </div>
+      <img id="image" src="/images/ajax-loader.gif">
+      <button type="submit" class="btn btn-default">Submit</button>
+    </form>
   </div>
-  <div class="form-group">
-    <label>Tag</label>
-    <input id="tag" type="text" class="form-control" name="tag" placeholder="text">
+  <div class="col-md-6">
+    <h2 class="page-header">Retrieve</h2>
+    <p> Data </p>
+    <div id="data" class="alert alert-warning"></div>
+    <form method="post" id="retrieve">
+      <div class="form-group">
+        <label>Tag</label>
+        <input id="tag1" type="text" class="form-control" name="tag" placeholder="text">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="password1" type="password" class="form-control" name="password" placeholder="Password">
+      </div>
+      <img id="image1" src="/images/ajax-loader.gif">
+      <button type="submit" class="btn btn-default">Submit</button>
+    </form>
   </div>
-  <div class="form-group">
-    <label>Password</label>
-    <input id="password" type="password" class="form-control" name="password" placeholder="Password">
-  </div>
-  <img id="image" src="/images/ajax-loader.gif">
-  <button type="submit" class="btn btn-default">Submit</button>
-</form>
+</div>
+
+

@@ -5,6 +5,7 @@ window.primary = "localhost:3000"
 window.secondary = "localhost:8000"
 
 $('#image').hide();
+$('#image1').hide();
 $('#danger').hide();
 $('#success').hide();
 
@@ -25,6 +26,10 @@ else{
 }
 
 $("#register").submit(function (e) {
+    
+    $('#danger').empty();
+    $('#success').empty();
+
     e.preventDefault();
     var form = $('#register');
     var username = $("#username").val();
@@ -124,8 +129,12 @@ $("#register").submit(function (e) {
 });
 
 $("#outsource").submit(function (e) {
+    $('#danger').empty();
+    $('#success').empty();
+
+
     e.preventDefault();
-    $('#image').show(); 
+    $('#image1').show(); 
     var tag = $("#tag").val();
     var userdata = $("#data").val();
     var password = $("#password").val();
@@ -192,8 +201,8 @@ $("#outsource").submit(function (e) {
                 
                 formData = new Object();
                 formData.email = email;
-                formData.c = outsource.c;
-                formData.ix = outsource.ix;
+                formData.c = outsource.c0;
+                formData.ix = outsource.ix0;
                 formData.myuskd = outsource.myusk0;
                 formData.salt = outsource.salt0;
 
@@ -218,8 +227,8 @@ $("#outsource").submit(function (e) {
 
                 formData = new Object();
                 formData.email = email;
-                formData.c = outsource.c;
-                formData.ix = outsource.ix;
+                formData.c = outsource.c1;
+                formData.ix = outsource.ix1;
                 formData.myuskd = outsource.myusk1;
                 formData.salt = outsource.salt1;
 
@@ -246,4 +255,131 @@ $("#outsource").submit(function (e) {
     });
 });
 
+$("#retrieve").submit(function (e) {
+    $('#danger').empty();
+    $('#success').empty();
 
+    e.preventDefault();
+    $('#image').show(); 
+    var tag = $("#tag1").val();
+    var password = $("#password1").val();
+
+    var state = states(password);
+    var server0 = {};
+    var server1 = {};
+    formData = new Object();
+    formData.email = window.email;
+    formData.a = state.A;
+    $.when(
+        $.ajax({
+            url : "http://" + window.primary + "/protocol/state",
+            type: "POST",
+            data : formData,
+            success: function(data){
+                if(data.message == "Protocol Succeeded"){
+                    $("#success").append("<p> Retrieve Server 0 Step 1 Succeeded</p>");
+                    server0.zd = data.result.zd;
+                    server0.myud = data.result.myud;
+                    server0.y = data.result.y;
+                    server0.salt = data.result.salt;
+                }
+                else{
+                    $("#danger").append("<p>An error occured in Retrieve Server 0 Step 1 (Server)</p>");
+                    $('#danger').show();
+                }
+            },
+            error: function (data){
+                $("#danger").append("<p>An error occured in Retrieve Server 0 Step 1 (Request)</p>");
+                $('#danger').show();
+            }
+        }),
+        $.ajax({
+            url : "http://" + window.secondary + "/protocol/state",
+            type: "POST",
+            data : formData,
+            success: function(data){
+                if(data.message == "Protocol Succeeded"){
+                    $("#success").append("<p> Retrieve Server 1 Step 1 Succeeded</p>");
+                    server1.zd = data.result.zd;
+                    server1.myud = data.result.myud;
+                    server1.y = data.result.y;
+                    server1.salt = data.result.salt;
+                }
+                else{
+                    $("#danger").append("<p>An error occured in Retrieve Server 1 Step 1 (Server)</p>");
+                    $('#danger').show();
+                }
+            },
+            error: function (data){
+                $("#danger").append("<p>An error occured in Retrieve Server 1 Step 1 (Request)</p>");
+                $('#danger').show();
+            }
+        })
+    ).then(function(){
+
+            formData.smalla = state.a;
+            formData.server0 = server0;
+            formData.server1 = server1;
+            formData.tag = tag;
+            console.log(formData);
+            var retrieve = retrieveState1(formData);
+            var result = {};
+
+            formData1 = new Object();
+            formData1.email = email;
+            formData1.t = retrieve.t;
+            formData1.myuskd = retrieve.myusk0;
+            formData1.salt = retrieve.salt0;
+            
+            formData2 = new Object();
+            formData2.email = email;
+            formData2.t = retrieve.t;
+            formData2.myuskd = retrieve.myusk1;
+            formData2.salt = retrieve.salt1;    
+                
+            $.when(
+                $.ajax({
+                    url : "http://" + window.primary + "/protocol/retrieve",
+                    type: "POST",
+                    data : formData1,
+                    success: function(data){
+                        if(data.message == "True"){
+                            $("#success").append("<p> Retrieve Server 0 Step 2 Succeeded</p>");
+                            result.server0 = data.result;
+                        }
+                        else{
+                            $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Server)</p>");
+                            $('#danger').show();
+                        }
+                    },
+                    error: function (data){
+                        $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Request)</p>");
+                        $('#danger').show();
+                    }
+                }),
+                $.ajax({
+                    url : "http://" + window.secondary + "/protocol/retrieve",
+                    type: "POST",
+                    data : formData2,
+                    success: function(data){
+                        if(data.message == "True"){
+                            $("#success").append("<p> Retrieve Server 1 Step 2 Succeeded</p>"); 
+                            result.server1 = data.result;        
+                        }
+                        else{
+                            $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Server)</p>");
+                            $('#danger').show();
+                        }
+                    },
+                    error: function (data){
+                        $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Request)</p>");
+                        $('#danger').show();
+                    }
+                })
+            ).then(function(){
+                console.log(result);
+                $('#success').show();
+                $('#image1').hide();
+        });                
+    });
+});

@@ -173,7 +173,7 @@ router.post('/outsource', function(req, res){
    			var A = Point(cache.A);
    			var Y = Point(cache.Y);
    			var skd = ecc.sjcl.misc.pbkdf2(mkd + A.x.toLocaleString() + Y.x.toLocaleString() + "2" , ecc.sjcl.codec.hex.toBits(salt));
-   			if(Verify(skd, C + ix , myuskd) == "True"){
+   			if(Verify(skd, C + ix, myuskd) == "True"){
    				var newStorage = new Storage({
 					email : email,
 					c : C,
@@ -187,6 +187,50 @@ router.post('/outsource', function(req, res){
 					console.log(register);
 				});
 				res.json({message : "True"});
+			}
+			else{
+				res.json({message : 'Tag Verification Failed'});
+			}
+   		}
+   	});
+});
+
+
+router.post('/retrieve', function(req, res){
+	var t = req.body.t;
+	var myuskd = req.body.myuskd;
+	var salt = req.body.salt;
+	var email = req.body.email;
+
+	Register.getRegisterByEmail(email, function(err, register){
+   		if(err) throw err;
+   		if(!register){
+   			res.json({message : 'Unknown User'});
+   		}
+   		else{
+   			var mkd =  register.mkd.split(",")[0];
+   			var cache = myCache.get(mkd);
+   			var A = Point(cache.A);
+   			var Y = Point(cache.Y);
+   			var skd = ecc.sjcl.misc.pbkdf2(mkd + A.x.toLocaleString() + Y.x.toLocaleString() + "2" , ecc.sjcl.codec.hex.toBits(salt));
+   			if(Verify(skd, t, myuskd) == "True"){
+				Storage.getStorageByEmail(email, function(err, register){
+					if(err) throw err;
+					if(!register){
+   						res.json({message : 'Unknown User'});
+   					}
+   					result = [];
+   					register.forEach(function(index){
+   						var C = index.c.split(",");
+   						var prp = new ecc.sjcl.cipher.aes(ecc.sjcl.codec.hex.toBits(t));
+						var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), "")).substring(0,64);
+						if( v == C[1]){
+							result.push({c : index.c, ix : index.ix});
+						}     
+                    });
+					res.json({message : "True", result : result});
+				});
+				
 			}
 			else{
 				res.json({message : 'Tag Verification Failed'});
