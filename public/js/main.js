@@ -6,6 +6,7 @@ window.secondary = "localhost:8000"
 
 $('#image').hide();
 $('#image1').hide();
+$('#image2').hide();
 $('#danger').hide();
 $('#success').hide();
 
@@ -62,15 +63,15 @@ $("#register").submit(function (e) {
                     data : formData,
                     success: function(data){
                         if(data.message == "True"){
-                             $("#success").append("Protocol Successfully Done Server 0 <br>");
+                             $("#success").append("<p> Protocol Successfully Done Server 0 </p>");
                         }
                         else{
-                            $("#danger").append("An error occured in Server 0 registration (Server)");
+                            $("#danger").append("<p> An error occured in Server 0 registration (Server) </p>");
                             $('#danger').show();
                         }
                     },
                     error: function (data){
-                        $("#danger").append("An error occured in Server 0 registration (Request)");
+                        $("#danger").append("<p> An error occured in Server 0 registration (Request)</p>");
                         $('#danger').show();
                     }
                 });
@@ -90,15 +91,15 @@ $("#register").submit(function (e) {
                     data : formData,
                     success: function(data){
                         if(data.message == "True"){
-                             $("#success").append("Protocol Successfully Done Server 1 <br> ");
+                             $("#success").append("<p> Protocol Successfully Done Server 1 </p>");
                         }
                         else{
-                            $("#danger").append("An error occured in Server 1 registration (Server)");
+                            $("#danger").append("<p>An error occured in Server 1 registration (Server)</p>");
                             $('#danger').show();
                         }
                     },
                     error: function (data){
-                        $("#danger").append("An error occured in Server 1 registration (Request)");
+                        $("#danger").append("<p>An error occured in Server 1 registration (Request)</p>");
                         $('#danger').show();
                     }
                 });
@@ -108,8 +109,8 @@ $("#register").submit(function (e) {
                 
             }
             else{
-                if(data.message.length == 1){
-                    $('<p>' + data.message.msg + '</p>').appendTo('#danger');
+                if(typeof data.message == "string"){
+                    $('<p>' + data.message + '</p>').appendTo('#danger');
                 }
                 else{
                     data.message.forEach(function(index){
@@ -251,16 +252,17 @@ $("#outsource").submit(function (e) {
                     }
                 });    
                 $('#success').show();
-                $('#image').hide();
+                $('#image1').hide();
     });
 });
 
 $("#retrieve").submit(function (e) {
+    $("#dataout").empty();
     $('#danger').empty();
     $('#success').empty();
 
     e.preventDefault();
-    $('#image').show(); 
+    $('#image2').show(); 
     var tag = $("#tag1").val();
     var password = $("#password1").val();
 
@@ -321,7 +323,6 @@ $("#retrieve").submit(function (e) {
             formData.server0 = server0;
             formData.server1 = server1;
             formData.tag = tag;
-            console.log(formData);
             var retrieve = retrieveState1(formData);
             var result = {};
 
@@ -388,7 +389,7 @@ $("#retrieve").submit(function (e) {
                     }
                 }
                 $('#success').show();
-                $('#image1').hide();
+                $('#image2').hide();
         });                
     });
 });

@@ -7,8 +7,6 @@ Progress
 
 Things to do
 ============
-* Validation
-* UI tweaks
 * Image support
 * Multiple keywords
 * Reset password
