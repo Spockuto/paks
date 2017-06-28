@@ -2,12 +2,13 @@
 
 Progress
 ========
-* Protocol (Register , Outsource)
-* Retrieve final function
+* Protocol (Register , Outsource, Retrieve)
 * Supports basic data
 
 Things to do
 ============
+* Validation
+* UI tweaks
 * Image support
 * Multiple keywords
 * Reset password

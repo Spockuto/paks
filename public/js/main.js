@@ -377,7 +377,16 @@ $("#retrieve").submit(function (e) {
                     }
                 })
             ).then(function(){
-                console.log(result);
+                result.k = retrieve.k;
+                result.email = window.email;
+                result.t = retrieve.t;
+                var final = retrieveState2(result);
+                for(var propName in final) {
+                    if(final.hasOwnProperty(propName)) {
+                        var propValue = final[propName];
+                        $("#dataout").append("<p>"+ propValue +"</p><br>");
+                    }
+                }
                 $('#success').show();
                 $('#image1').hide();
         });                

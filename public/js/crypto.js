@@ -100,9 +100,8 @@ function outsourced(data){
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
-				var t = ecc.sjcl.misc.cachedPbkdf2(K.x.toLocaleString() + word);
-
-				var prp = new ecc.sjcl.cipher.aes(t.key);
+				var t = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + word, word);
+				var prp = new ecc.sjcl.cipher.aes(t);
 				var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, e.toBits(), "")).substring(0,64);			
 				var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
 				var myuc0 = Tag(mku, e.toLocaleString() + v + pieces[0]);
@@ -151,17 +150,18 @@ function retrieveState1(data){
 
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
-				var t = ecc.sjcl.misc.cachedPbkdf2(K.x.toLocaleString() + word);
+				var t = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + word, word);
 				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
-				var myusk0 = Tag(sk0.key, ecc.sjcl.codec.hex.fromBits(t.key));
-				var myusk1 = Tag(sk1.key, ecc.sjcl.codec.hex.fromBits(t.key));
+				var myusk0 = Tag(sk0.key, ecc.sjcl.codec.hex.fromBits(t));
+				var myusk1 = Tag(sk1.key, ecc.sjcl.codec.hex.fromBits(t));
 				var result =  new Object();
-				result.t = ecc.sjcl.codec.hex.fromBits(t.key);
+				result.t = ecc.sjcl.codec.hex.fromBits(t);
  				result.myusk0 = myusk0;
 				result.myusk1 = myusk1;
 				result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
 				result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
+				result.k = K.x.toLocaleString() + "," + K.y.toLocaleString();
 				return result;
 		}
 		else{
@@ -174,8 +174,44 @@ function retrieveState1(data){
 
 }
 
-function retriveState2(data){	
+function retrieveState2(data){	
 	var server0 = data.server0;
 	var server1 = data.server1;
+	var K = Point(data.k);
+	var t = data.t;
 
+	var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + data.email + "0" , data.email);
+	var result = {};
+	var prp, C, v;
+
+	server0.forEach(function(index){
+		C = index.c.split(",");
+		prp = new ecc.sjcl.cipher.aes(ecc.sjcl.codec.hex.toBits(t));
+		v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), "")).substring(0,64);
+
+		if(v == C[1] && Verify(mku, C[0] + v + index.ix, C[2]) == "True" ){
+			if(result[C[0]]){	
+				result[C[0]]+=index.ix
+			}
+			else{
+				result[C[0]] = index.ix
+			}
+		}
+	});
+
+	server1.forEach(function(index){
+		C = index.c.split(",");
+		prp = new ecc.sjcl.cipher.aes(ecc.sjcl.codec.hex.toBits(t));
+		v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), "")).substring(0,64);
+
+		if(v == C[1] && Verify(mku, C[0] + v + index.ix, C[2]) == "True" ){
+			if(result[C[0]]){	
+				result[C[0]]+=index.ix
+			}
+			else{
+				result[C[0]] = index.ix
+			}
+		}
+	});
+	return result;
 }
