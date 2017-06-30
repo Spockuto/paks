@@ -1,15 +1,17 @@
-#PAKS
+# PAKS
 
 Progress
 ========
 * Protocol (Register , Outsource, Retrieve)
+* Multiple keyword Outsource
 * Supports basic data
 
 Things to do
 ============
 * Image support
-* Multiple keywords
+* Multiple keywords retrieval
 * Reset password
+* Timing
 
 Doubts
 ======
@@ -18,11 +20,11 @@ Doubts
 * AES IV problem
 * ix unencrypted
 * salt for KDF
+* h Generator P384 (Yet to be decided)
 
 Global Parameters
 =================
 * Curve NIST P384
-* h Generator P384 (Yet to be decided)
 * HASH - sha256 (256)
 * KDF1 - PBKDF2 (256)
 * KDF2 - PBKDF2 (256)

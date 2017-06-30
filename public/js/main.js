@@ -47,7 +47,11 @@ $("#register").submit(function (e) {
         success: function (data) {
             if(data.success == "True"){
                 $('#success').text("User Successfully registered <br>");
+
+                console.time('register');
                 var protocol = register(password);
+                console.timeEnd('register');
+
                 formData = new Object();
                 formData.email = email;
                 formData.xd = protocol.x0;
@@ -139,8 +143,9 @@ $("#outsource").submit(function (e) {
     var tag = $("#tag").val();
     var userdata = $("#data").val();
     var password = $("#password").val();
-
+    console.time('state');
     var state = states(password);
+    console.timeEnd('state');
     var server0 = {};
     var server1 = {};
     formData = new Object();
@@ -198,59 +203,70 @@ $("#outsource").submit(function (e) {
                 formData.server1 = server1;
                 formData.tag = tag;
                 formData.data = userdata;
+                console.time('outsource');
                 var outsource = outsourced(formData);
-                
-                formData = new Object();
-                formData.email = email;
-                formData.c = outsource.c0;
-                formData.ix = outsource.ix0;
-                formData.myuskd = outsource.myusk0;
-                formData.salt = outsource.salt0;
+                console.timeEnd('outsource');
+                console.log(outsource);
 
-                $.ajax({
-                    url : "http://" + window.primary + "/protocol/outsource",
-                    type: "POST",
-                    data : formData,
-                    success: function(data){
-                        if(data.message == "True"){
-                            $("#success").append("<p> Outsource Server 0 Step 2 Succeeded</p>");
-                        }
-                        else{
-                            $("#danger").append("<p>An error occured in Outsource Server 0 Step 2 (Server)</p>");
-                            $('#danger').show();
-                        }
-                    },
-                    error: function (data){
-                        $("#danger").append("<p>An error occured in Outsource Server 0 Step 2 (Request)</p>");
-                        $('#danger').show();
-                    }
-                });
+                if(outsource.result != "Tag 1 Verify Failed" && outsource.result != "Tag 2 Verify Failed"){
+                    outsource.data.forEach(function(cipherdata){
+                        formData = new Object();
+                        formData.email = email;
+                        formData.c = cipherdata.c0;
+                        formData.ix = outsource.ix0;
+                        formData.myuskd = cipherdata.myusk0;
+                        formData.salt = outsource.salt0;
 
-                formData = new Object();
-                formData.email = email;
-                formData.c = outsource.c1;
-                formData.ix = outsource.ix1;
-                formData.myuskd = outsource.myusk1;
-                formData.salt = outsource.salt1;
+                        $.ajax({
+                            url : "http://" + window.primary + "/protocol/outsource",
+                            type: "POST",
+                            data : formData,
+                            success: function(data){
+                                if(data.message == "True"){
+                                    $("#success").append("<p> Outsource Server 0 Step 2 Succeeded</p>");
+                                }
+                                else{
+                                    $("#danger").append("<p>An error occured in Outsource Server 0 Step 2 (Server)</p>");
+                                    $('#danger').show();
+                                }
+                            },
+                            error: function (data){
+                                $("#danger").append("<p>An error occured in Outsource Server 0 Step 2 (Request)</p>");
+                                $('#danger').show();
+                            }
+                        });
 
-                $.ajax({
-                    url : "http://" + window.secondary + "/protocol/outsource",
-                    type: "POST",
-                    data : formData,
-                    success: function(data){
-                        if(data.message == "True"){
-                            $("#success").append("<p> Outsource Server 1 Step 2 Succeeded</p>");         
-                        }
-                        else{
-                            $("#danger").append("<p>An error occured in Outsource Server 1 Step 2 (Server)</p>");
-                            $('#danger').show();
-                        }
-                    },
-                    error: function (data){
-                        $("#danger").append("<p>An error occured in Outsource Server 1 Step 2 (Request)</p>");
-                        $('#danger').show();
-                    }
-                });    
+                        formData = new Object();
+                        formData.email = email;
+                        formData.c = cipherdata.c1;
+                        formData.ix = outsource.ix1;
+                        formData.myuskd = cipherdata.myusk1;
+                        formData.salt = outsource.salt1;
+
+                        $.ajax({
+                            url : "http://" + window.secondary + "/protocol/outsource",
+                            type: "POST",
+                            data : formData,
+                            success: function(data){
+                                if(data.message == "True"){
+                                    $("#success").append("<p> Outsource Server 1 Step 2 Succeeded</p>");         
+                                }
+                                else{
+                                    $("#danger").append("<p>An error occured in Outsource Server 1 Step 2 (Server)</p>");
+                                    $('#danger').show();
+                                }
+                            },
+                            error: function (data){
+                                $("#danger").append("<p>An error occured in Outsource Server 1 Step 2 (Request)</p>");
+                                $('#danger').show();
+                            }
+                        });
+                    });
+                }
+                else{
+                    $("#danger").append("Tag Verification Failed. Dont tryna cheat mate");
+                    $('#danger').show();
+                }       
                 $('#success').show();
                 $('#image1').hide();
     });
@@ -266,7 +282,10 @@ $("#retrieve").submit(function (e) {
     var tag = $("#tag1").val();
     var password = $("#password1").val();
 
+    console.time('state');
     var state = states(password);
+    console.timeEnd('state');
+    
     var server0 = {};
     var server1 = {};
     formData = new Object();
@@ -323,73 +342,86 @@ $("#retrieve").submit(function (e) {
             formData.server0 = server0;
             formData.server1 = server1;
             formData.tag = tag;
+            console.time('retrieveState1');
             var retrieve = retrieveState1(formData);
-            var result = {};
+            console.timeEnd('retrieveState1');
+            console.log(retrieve);
 
-            formData1 = new Object();
-            formData1.email = email;
-            formData1.t = retrieve.t;
-            formData1.myuskd = retrieve.myusk0;
-            formData1.salt = retrieve.salt0;
-            
-            formData2 = new Object();
-            formData2.email = email;
-            formData2.t = retrieve.t;
-            formData2.myuskd = retrieve.myusk1;
-            formData2.salt = retrieve.salt1;    
+            if(retrieve.result != "Tag 1 Verify Failed" && retrieve.result != "Tag 2 Verify Failed"){
+                var result = {};
+
+                formData1 = new Object();
+                formData1.email = email;
+                formData1.t = retrieve.t;
+                formData1.myuskd = retrieve.myusk0;
+                formData1.salt = retrieve.salt0;
                 
-            $.when(
-                $.ajax({
-                    url : "http://" + window.primary + "/protocol/retrieve",
-                    type: "POST",
-                    data : formData1,
-                    success: function(data){
-                        if(data.message == "True"){
-                            $("#success").append("<p> Retrieve Server 0 Step 2 Succeeded</p>");
-                            result.server0 = data.result;
-                        }
-                        else{
-                            $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Server)</p>");
+                formData2 = new Object();
+                formData2.email = email;
+                formData2.t = retrieve.t;
+                formData2.myuskd = retrieve.myusk1;
+                formData2.salt = retrieve.salt1;    
+                    
+                $.when(
+                    $.ajax({
+                        url : "http://" + window.primary + "/protocol/retrieve",
+                        type: "POST",
+                        data : formData1,
+                        success: function(data){
+                            if(data.message == "True"){
+                                $("#success").append("<p> Retrieve Server 0 Step 2 Succeeded</p>");
+                                result.server0 = data.result;
+                            }
+                            else{
+                                $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Server)</p>");
+                                $('#danger').show();
+                            }
+                        },
+                        error: function (data){
+                            $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Request)</p>");
                             $('#danger').show();
                         }
-                    },
-                    error: function (data){
-                        $("#danger").append("<p>An error occured in Retrieve Server 0 Step 2 (Request)</p>");
-                        $('#danger').show();
-                    }
-                }),
-                $.ajax({
-                    url : "http://" + window.secondary + "/protocol/retrieve",
-                    type: "POST",
-                    data : formData2,
-                    success: function(data){
-                        if(data.message == "True"){
-                            $("#success").append("<p> Retrieve Server 1 Step 2 Succeeded</p>"); 
-                            result.server1 = data.result;        
-                        }
-                        else{
-                            $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Server)</p>");
+                    }),
+                    $.ajax({
+                        url : "http://" + window.secondary + "/protocol/retrieve",
+                        type: "POST",
+                        data : formData2,
+                        success: function(data){
+                            if(data.message == "True"){
+                                $("#success").append("<p> Retrieve Server 1 Step 2 Succeeded</p>"); 
+                                result.server1 = data.result;        
+                            }
+                            else{
+                                $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Server)</p>");
+                                $('#danger').show();
+                            }
+                        },
+                        error: function (data){
+                            $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Request)</p>");
                             $('#danger').show();
                         }
-                    },
-                    error: function (data){
-                        $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Request)</p>");
-                        $('#danger').show();
+                    })
+                ).then(function(){
+                    result.k = retrieve.k;
+                    result.email = window.email;
+                    result.t = retrieve.t;
+                    console.time('retrieveState2');
+                    var final = retrieveState2(result);
+                    console.timeEnd('retrieveState2');
+                    for(var propName in final) {
+                        if(final.hasOwnProperty(propName)) {
+                            var propValue = final[propName];
+                            $("#dataout").append("<p>"+ propValue +"</p><br>");
+                        }
                     }
-                })
-            ).then(function(){
-                result.k = retrieve.k;
-                result.email = window.email;
-                result.t = retrieve.t;
-                var final = retrieveState2(result);
-                for(var propName in final) {
-                    if(final.hasOwnProperty(propName)) {
-                        var propValue = final[propName];
-                        $("#dataout").append("<p>"+ propValue +"</p><br>");
-                    }
-                }
-                $('#success').show();
+                    $('#success').show();
+                    $('#image2').hide();
+                });
+            }
+            else{
+                $("#danger").append("Tag Verification Failed. Dont tryna cheat mate");
+                $('#danger').show();
                 $('#image2').hide();
-        });                
+            }                
     });
 });

@@ -26,6 +26,14 @@ function Point(string){
 		     new ecc.sjcl.bn.prime.p384(string.split(",")[1]));
 }
 
+function toHex(str) {
+	var hex = '';
+	for(var i=0;i<str.length;i++) {
+		hex += ''+str.charCodeAt(i).toString(16);
+	}
+	return "0x" + hex;
+}
+
 function register(password){
 
 	//r1,r2,x0,x1 <- Zq*
@@ -51,7 +59,7 @@ function register(password){
 	var xr1 = x.mult(r1);
 	var k0Inverse = Point(k0.x.toLocaleString()  + "," + k0.y.mul(-1).toLocaleString());
 	var k1 = xr1.toJac().add(k).add(k0Inverse).toAffine();
-	var cpi = x.mult2(r2, new ecc.sjcl.bn.prime.p384(password), h);
+	var cpi = x.mult2(r2, new ecc.sjcl.bn.prime.p384(toHex(password)), h);
 
 	//unsure about this part
 	var mk0 = ecc.sjcl.misc.cachedPbkdf2(k.x.toLocaleString() + "server0" + "1");
@@ -72,7 +80,7 @@ function register(password){
 
 function states(password){
 	var a = new ecc.sjcl.bn.random(q, 10);
-	var A = g.mult2(a, new ecc.sjcl.bn.prime.p384(password), h);
+	var A = g.mult2(a, new ecc.sjcl.bn.prime.p384(toHex(password)), h);
 	var result = new Object();
 	result.a = a.toLocaleString();
 	result.A = A.x.toLocaleString() + ',' + A.y.toLocaleString();
@@ -87,7 +95,7 @@ function outsourced(data){
 	var myu0 = data.server0.myud;
 	var myu1 = data.server1.myud;
 	var A = Point(data.a);
-	var word  = data.tag;
+	var words  = data.tag.split(',');
 	var email = data.email;
 	var ix = data.data;
 	var number, pieces;
@@ -96,32 +104,42 @@ function outsourced(data){
 
 	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
 	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
+	console.log(K.x.toLocaleString() + "," + K.y.toLocaleString());
 	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
+
+			var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
+			var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
+			var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
+
+			var cipherdata = []
+			words.forEach(function(word){
 				var t = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + word, word);
 				var prp = new ecc.sjcl.cipher.aes(t);
 				var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, e.toBits(), "")).substring(0,64);			
-				var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
 				var myuc0 = Tag(mku, e.toLocaleString() + v + pieces[0]);
 				var myuc1 = Tag(mku, e.toLocaleString() + v + pieces[1]);
-				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
-				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var C0 = e.toLocaleString() + "," + v + "," + myuc0;
 				var C1 = e.toLocaleString() + "," + v + "," + myuc1;
 				var myusk0 = Tag(sk0.key, C0 + pieces[0]);
 				var myusk1 = Tag(sk1.key, C1 + pieces[1]);
+
 				var result =  new Object();
 				result.c0 = C0;
-				result.ix0 = pieces[0];
 				result.c1 = C1;
-				result.ix1 = pieces[1];
  				result.myusk0 = myusk0;
 				result.myusk1 = myusk1;
-				result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
-				result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
-				return result;
+				cipherdata.push(result);
+			});		
+			var result =  new Object();		
+			result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
+			result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
+			result.ix0 = pieces[0];
+			result.ix1 = pieces[1];
+			result.data = cipherdata;
+			return result;
 		}
 		else{
 			return {result : "Tag 1 Verify Failed"};
@@ -145,6 +163,7 @@ function retrieveState1(data){
 
 	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
 	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
+	console.log(K.x.toLocaleString() + "," + K.y.toLocaleString());
 	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 

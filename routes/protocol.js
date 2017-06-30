@@ -72,7 +72,7 @@ router.post('/register', function(req, res){
 });
 
 router.post('/state', function(req, res){
-
+	console.time("state");
 	var email = req.body.email;
 	var A = Point(req.body.a);
 	var sd = new ecc.sjcl.bn.random(q, 10);
@@ -134,6 +134,7 @@ router.post('/state', function(req, res){
 											result.y = Y.x.toLocaleString() + ',' + Y.y.toLocaleString();
 											result.zd = Zd.x.toLocaleString() + ',' + Zd.y.toLocaleString();
 											result.salt = register.mkd.split(",")[1];
+											console.timeEnd("state");
 											res.json({message :'Protocol Succeeded',
 													  result : result});
 
@@ -144,6 +145,7 @@ router.post('/state', function(req, res){
 
         								}	
         								else{
+        									console.timeEnd("state");
         									res.json({message :'Protocol Failed'});
         								}
         							}
@@ -156,6 +158,7 @@ router.post('/state', function(req, res){
 });	
 
 router.post('/outsource', function(req, res){
+	console.time("outsource");
 	var C = req.body.c;
 	var ix = req.body.ix;
 	var myuskd = req.body.myuskd;
@@ -165,7 +168,9 @@ router.post('/outsource', function(req, res){
 	Register.getRegisterByEmail(email, function(err, register){
    		if(err) throw err;
    		if(!register){
+
    			res.json({message : 'Unknown User'});
+   			console.timeEnd("outsource");
    		}
    		else{
    			var mkd =  register.mkd.split(",")[0];
@@ -182,13 +187,16 @@ router.post('/outsource', function(req, res){
 				Storage.StorageUser(newStorage, function(err, register){
 					if(err) {
 						throw err;
+						console.timeEnd("outsource");
 						res.json({message : "Storage Failed"});
 					}
 					console.log(register);
+					console.timeEnd("outsource");
 				});
 				res.json({message : "True"});
 			}
 			else{
+				console.timeEnd("outsource");
 				res.json({message : 'Tag Verification Failed'});
 			}
    		}
@@ -197,6 +205,7 @@ router.post('/outsource', function(req, res){
 
 
 router.post('/retrieve', function(req, res){
+	console.time("retrieve");
 	var t = req.body.t;
 	var myuskd = req.body.myuskd;
 	var salt = req.body.salt;
@@ -205,6 +214,7 @@ router.post('/retrieve', function(req, res){
 	Register.getRegisterByEmail(email, function(err, register){
    		if(err) throw err;
    		if(!register){
+   			console.timeEnd("retrieve");
    			res.json({message : 'Unknown User'});
    		}
    		else{
@@ -217,6 +227,7 @@ router.post('/retrieve', function(req, res){
 				Storage.getStorageByEmail(email, function(err, register){
 					if(err) throw err;
 					if(!register){
+						console.timeEnd("retrieve");
    						res.json({message : 'Unknown User'});
    					}
    					result = [];
@@ -228,11 +239,13 @@ router.post('/retrieve', function(req, res){
 							result.push({c : index.c, ix : index.ix});
 						}     
                     });
+                    console.timeEnd("retrieve");
 					res.json({message : "True", result : result});
 				});
 				
 			}
 			else{
+				console.timeEnd("retrieve");
 				res.json({message : 'Tag Verification Failed'});
 			}
    		}
