@@ -8,10 +8,11 @@ Progress
 
 Things to do
 ============
-* Image support
+* File Support
+* Front End to add new files and tabs
+* Write output to Logs
 * Multiple keywords retrieval
 * Reset password
-* Timing
 
 Doubts
 ======
