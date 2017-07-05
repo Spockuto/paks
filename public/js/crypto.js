@@ -98,13 +98,9 @@ function outsourced(data){
 	var words  = data.tag.split(',');
 	var email = data.email;
 	var ix = data.data;
-	var number, pieces;
-    number = Math.ceil(Math.random() * (ix.length - 1));
-    pieces = [ix.substring(number, -number), ix.substring(number)];
 
 	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
 	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
-	console.log(K.x.toLocaleString() + "," + K.y.toLocaleString());
 	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
@@ -119,25 +115,21 @@ function outsourced(data){
 				var t = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + word, word);
 				var prp = new ecc.sjcl.cipher.aes(t);
 				var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, e.toBits(), "")).substring(0,64);			
-				var myuc0 = Tag(mku, e.toLocaleString() + v + pieces[0]);
-				var myuc1 = Tag(mku, e.toLocaleString() + v + pieces[1]);
-				var C0 = e.toLocaleString() + "," + v + "," + myuc0;
-				var C1 = e.toLocaleString() + "," + v + "," + myuc1;
-				var myusk0 = Tag(sk0.key, C0 + pieces[0]);
-				var myusk1 = Tag(sk1.key, C1 + pieces[1]);
+				var myuc = Tag(mku, e.toLocaleString() + v + ix);
+				var C = e.toLocaleString() + "," + v + "," + myuc;
+				var myusk0 = Tag(sk0.key, C + ix);
+				var myusk1 = Tag(sk1.key, C + ix);
 
 				var result =  new Object();
-				result.c0 = C0;
-				result.c1 = C1;
  				result.myusk0 = myusk0;
 				result.myusk1 = myusk1;
+				result.c  = C; 
 				cipherdata.push(result);
 			});		
 			var result =  new Object();		
 			result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
 			result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
-			result.ix0 = pieces[0];
-			result.ix1 = pieces[1];
+			result.ix = ix;
 			result.data = cipherdata;
 			return result;
 		}
@@ -163,7 +155,6 @@ function retrieveState1(data){
 
 	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
 	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
-	console.log(K.x.toLocaleString() + "," + K.y.toLocaleString());
 	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 
@@ -210,10 +201,10 @@ function retrieveState2(data){
 
 		if(v == C[1] && Verify(mku, C[0] + v + index.ix, C[2]) == "True" ){
 			if(result[C[0]]){	
-				result[C[0]]+=index.ix
+				result[C[0]]+=index.ix;
 			}
 			else{
-				result[C[0]] = index.ix
+				result[C[0]] = index.ix;
 			}
 		}
 	});
@@ -224,13 +215,54 @@ function retrieveState2(data){
 		v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), "")).substring(0,64);
 
 		if(v == C[1] && Verify(mku, C[0] + v + index.ix, C[2]) == "True" ){
-			if(result[C[0]]){	
-				result[C[0]]+=index.ix
-			}
-			else{
-				result[C[0]] = index.ix
+			if(!result[C[0]]){	
+				result[C[0]] = index.ix;			
 			}
 		}
 	});
 	return result;
+}
+
+function reset(data){
+	var Y = Point(data.server0.y);
+	var cpi = Point(data.server0.cpi);
+	var gr2 = Point(data.server0.gr2);
+
+	var Z0 = Point(data.server0.zd);
+	var Z1 = Point(data.server1.zd);
+	var myu0 = data.server0.myud;
+	var myu1 = data.server1.myud;
+	var email = data.email;
+	var oldpassword = data.oldpassword;
+	var newpassword = data.newpassword;
+
+	var Ya = Y.mult(new ecc.sjcl.bn.prime.p384(data.smalla));
+	var K = Z0.toJac().add(Z1).add(Ya).toAffine();
+	var mk0 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server0" + "1", ecc.sjcl.codec.hex.toBits(data.server0.salt));
+	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
+
+	if(Verify(mk0, Y.x.toLocaleString() + Z0.x.toLocaleString() + gr2.x.toLocaleString() + cpi.x.toLocaleString(), myu0) == "True"){
+		if(Verify(mk1, Y.x.toLocaleString() + Z1.x.toLocaleString()+ gr2.x.toLocaleString() + cpi.x.toLocaleString(), myu1) == "True"){
+			var rstar = new ecc.sjcl.bn.random(q, 10);
+			var hInverse =  Point(h.x.toLocaleString()  + "," + h.y.mul(-1).toLocaleString());
+			var hInversePI = hInverse.mult(new ecc.sjcl.bn.prime.p384(toHex(oldpassword)));
+			var cpihInversePI = hInversePI.toJac().add(cpi).toAffine();
+			var cpistar = cpihInversePI.mult2(rstar, new ecc.sjcl.bn.prime.p384(toHex(newpassword)), h);
+			var gr2star = gr2.mult(rstar);
+			var myu0 = Tag(mk0, gr2star.x.toLocaleString() + cpistar.x.toLocaleString());
+			var myu1 = Tag(mk1, gr2star.x.toLocaleString() + cpistar.x.toLocaleString());
+			var result =  new Object();
+ 			result.myu0 = myu0;
+			result.myu1 = myu1;
+			result.cpi = cpistar.x.toLocaleString() + "," + cpistar.y.toLocaleString();
+			result.gr2 = gr2star.x.toLocaleString() + "," + gr2star.y.toLocaleString();
+			return result;
+		}
+		else{
+			return {result : "Tag 1 Verify Failed"};
+		}
+	}
+	else{
+		return {result : "Tag 2 Verify Failed"};
+	}
 }

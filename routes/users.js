@@ -10,6 +10,10 @@ router.get('/register', function(req, res){
 	res.render('register');
 });
 
+router.get('/change', function(req, res){
+  res.render('change');
+});
+
 // Login
 router.get('/login', function(req, res){
 	res.render('login');
@@ -17,14 +21,12 @@ router.get('/login', function(req, res){
 
 // Register User
 router.post('/register', function(req, res){
-	var name = req.body.name;
 	var email = req.body.email;
 	var username = req.body.username;
 	var password = req.body.password;
 	var password2 = req.body.password2;
 
 	// Validation
-	req.checkBody('name', 'Name is required').notEmpty();
 	req.checkBody('email', 'Email is required').notEmpty();
 	req.checkBody('email', 'Email is not valid').isEmail();
 	req.checkBody('username', 'Username is required').notEmpty();
@@ -49,17 +51,6 @@ router.post('/register', function(req, res){
    						res.json({success : "False", message: "Email exists" });
    					}
    					else{
-   						var newUser = new User({
-							name: name,
-							email:email,
-							username: username,
-							password: password
-						});
-
-						User.createUser(newUser, function(err, user){
-							if(err) throw err;
-							console.log(user);
-						});
 						res.json({success : "True"});	
    					}
 				});

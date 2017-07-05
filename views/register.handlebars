@@ -1,14 +1,15 @@
+<div class="row">
+  <div class="col-md-3">
+  </div>
+  <div class="col-md-6">
 <h2 class="page-header">Register</h2>
 {{#if errors}}
       {{#each errors}}
         <div class="alert alert-danger">{{msg}}</div>
       {{/each}}
 {{/if}}
+
 <form id="register" action="/users/register" method="post">
-   <div class="form-group">
-    <label>Name</label>
-    <input type="text" class="form-control" placeholder="Name" name="name">
-  </div>
   <div class="form-group">
     <label>Username</label>
     <input id="username" type="text" class="form-control" placeholder="Username" name="username">
@@ -26,5 +27,9 @@
     <input type="password" class="form-control" placeholder="Password" name="password2">
   </div>
   <img id="image" src="/images/ajax-loader.gif">
-  <button id="cache" type="submit" class="btn btn-default">Submit</button>
+  <button id="cache" type="submit" class="btn btn-default">Register</button>
 </form>
+</div>
+ <div class="col-md-3">
+</div>
+</div>

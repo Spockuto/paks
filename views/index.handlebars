@@ -1,39 +1,82 @@
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-md-1 col-lg-1">
+  </div>
+  <div class="col-md-5 col-lg-5 alert alert-info">
+    <p>PAKS is set of protocols to outsource and retrieve data with associated keywords in a
+    multiserver environment using your password. The system is device agnostic as high-entropy keys aren't
+    stored on the user side. All you need is a password :).<br>
+    The current setup uses two servers: <br>
+    <ul>
+      <li>{{primary}}</li>
+      <li>{{secondary}}</li>
+    </ul>
+    <h4>Use commas to seperate the keywords</h4>
+
+    </p>
+  </div>
+   <div class="col-md-5 col-lg-5">
+      <div class="form-group">
+          <label>Email</label>
+          <input id="email" type="text" class="form-control" name="email" placeholder="text">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input id="password" type="password" class="form-control" name="password" placeholder="Password">
+        </div>
+    </div>
+    <div class="col-md-1 col-lg-1">
+    </div>
+</div>
+
+
+<div class="row">
+  <div class="col-md-1 col-lg-1">
+  </div>
+  <div class="col-md-5 col-lg-5">
   <h2 class="page-header">Outsource</h2>
     <form method="post" id="outsource">
-      <div class="form-group">
-        <label for="comment">Data</label>
-        <textarea id="data" class="form-control" rows="5" id="data" name="data"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Tag</label>
+       <div class="form-group">
+        <label>Keyword(s)</label>
         <input id="tag" type="text" class="form-control" name="tag" placeholder="text">
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input id="password" type="password" class="form-control" name="password" placeholder="Password">
+        <label>Files</label>
+        <input id="upload-input" type="file" name="uploads[]" multiple="multiple">
+        <div class="alert alert-info" id="datain"></div>
+      </div>
+      <div class="form-group">
+        <label for="comment">Optional Notes</label>
+        <textarea id="data" class="form-control" rows="3" id="data" name="data"></textarea>
       </div>
       <img id="image1" src="/images/ajax-loader.gif">
-      <button type="submit" class="btn btn-default">Submit</button>
+      <button type="submit" class="btn btn-success" disabled="disabled" id="outsourcebutton">Outsource</button>
     </form>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-5 col-lg-5">
     <h2 class="page-header">Retrieve</h2>
-    <p> Data </p>
-    <div id="dataout" class="alert alert-warning"></div>
     <form method="post" id="retrieve">
       <div class="form-group">
-        <label>Tag</label>
+        <label>Keyword(s)</label>
         <input id="tag1" type="text" class="form-control" name="tag" placeholder="text">
       </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input id="password1" type="password" class="form-control" name="password" placeholder="Password">
-      </div>
       <img id="image2" src="/images/ajax-loader.gif">
-      <button type="submit" class="btn btn-default">Submit</button>
+      <button type="submit" class="btn btn-success" disabled="disabled" id="retrievebutton">Retrieve</button>
     </form>
+    <div id="dataout" class="alert alert-success">
+    <p>Retrieved Information</p>
+    <table class="table table-hover" id="databody"> 
+      <thead>
+        <tr>
+          <th>Keyword(s)</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="col-md-1 col-lg-1">
   </div>
 </div>
 

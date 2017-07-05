@@ -32,6 +32,11 @@ module.exports.RegisterUser = function(Register, callback){
 	        Register.save(callback);
 }
 
+module.exports.ResetUser = function(Register, callback){	
+			Register.isNew = false;
+	        Register.save(callback);
+}
+
 module.exports.getRegisterByEmail = function(email, callback){
 	var query = {email: email};
 	Register.findOne(query, callback);

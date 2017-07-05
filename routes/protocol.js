@@ -14,6 +14,9 @@ var Register = require('../models/register');
 var Storage = require('../models/storage');
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 100, checkperiod: 120 } );
+var formidable = require('formidable');
+var fs = require('fs');
+var path = require('path');
 
 function ServerRetryStrategy(err, response, body){
   return err || !body;
@@ -69,6 +72,44 @@ router.post('/register', function(req, res){
 			console.log(register);
 		});
 		res.json({message : "True"});
+});
+
+router.post('/reset', function(req, res){
+	console.time('reset');
+	var email = req.body.email;
+	var cpi = Point(req.body.cpi);
+	var gr2 = Point(req.body.gr2);
+	var myud = req.body.myud;
+	Register.getRegisterByEmail(email, function(err, register){
+   		if(err) throw err;
+   		if(!register){
+   			res.json({message : 'Unknown User'});
+   		}
+   		else{
+   			var mkd =  register.mkd.split(",")[0];
+   			if(Verify(ecc.sjcl.codec.hex.toBits(mkd),gr2.x.toLocaleString() + cpi.x.toLocaleString(), myud) == "True"){
+   				var id = register._id;
+   				var newRegister = new Register({
+					_id : id,
+					gr2 : req.body.gr2,
+					cpi : req.body.cpi
+				});
+				Register.ResetUser(newRegister, function(err, register){
+					if(err) {
+						throw err;
+						res.json({message : "False"});
+					}
+					console.timeEnd("reset");
+					console.log(register);
+				});
+				res.json({message : "True"});
+   			}
+   			else{
+   				console.timeEnd("reset");
+				res.json({message : 'Tag Verification Failed'});
+   			}
+   		}
+   	});
 });
 
 router.post('/state', function(req, res){
@@ -128,8 +169,16 @@ router.post('/state', function(req, res){
  											var cpiAInverse = cpi.toJac().add(AInverse).toAffine();
  											var cpiAInverseyd = cpiAInverse.mult(yd);
  											var Zd = kd.toJac().add(cpiAInverseyd).add(gr1RInverse).toAffine();
- 											var myud = Tag(ecc.sjcl.codec.hex.toBits(mkd), A.x.toLocaleString() + Y.x.toLocaleString() + Zd.x.toLocaleString());
  											var result = new Object();
+ 											if(req.body.reset == "True"){
+ 												var myud = Tag(ecc.sjcl.codec.hex.toBits(mkd), Y.x.toLocaleString() + Zd.x.toLocaleString() + 
+ 													gr2.x.toLocaleString() +  cpi.x.toLocaleString());
+ 												result.cpi = cpi.x.toLocaleString() + ',' + cpi.y.toLocaleString();
+ 												result.gr2 = gr2.x.toLocaleString() + ',' + gr2.y.toLocaleString();
+ 											}
+ 											else{
+ 												var myud = Tag(ecc.sjcl.codec.hex.toBits(mkd), A.x.toLocaleString() + Y.x.toLocaleString() + Zd.x.toLocaleString());
+ 											}								
 											result.myud = myud;
 											result.y = Y.x.toLocaleString() + ',' + Y.y.toLocaleString();
 											result.zd = Zd.x.toLocaleString() + ',' + Zd.y.toLocaleString();
@@ -254,5 +303,26 @@ router.post('/retrieve', function(req, res){
 
 router.post('/cache', function(req, res){
 	res.json(myCache.get(req.body.key));
+});
+
+router.post('/upload', function(req, res){
+  var form = new formidable.IncomingForm();
+  form.multiples = true;
+  form.uploadDir = path.join(__dirname, '/uploads');
+  form.on('file', function(field, file) {
+    fs.rename(file.path, path.join(form.uploadDir, file.name));
+  });
+  form.on('error', function(err) {
+    console.log('An error has occured: \n' + err);
+  });
+  form.on('end', function() {
+    res.end('success');
+  });
+  form.parse(req);
+});
+
+router.get('/download', function(req, res){
+  var file = __dirname + '/uploads/'+ req.query.file;
+  res.download(file);
 });
 module.exports = router;
