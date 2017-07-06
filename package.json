@@ -2,6 +2,7 @@
   "name": "PAKS",
   "version": "1.0.0",
   "description": "Password Authenticated Keyword Search",
+  "repository" :"https://github.com/Spockuto/paks",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -29,6 +30,7 @@
     "passport": "*",
     "passport-http": "*",
     "passport-local": "*",
+    "performance-now": "^2.1.0",
     "request": "^2.81.0",
     "requestretry": "^1.12.0"
   }

@@ -2,15 +2,7 @@
   <div class="col-md-1 col-lg-1">
   </div>
   <div class="col-md-5 col-lg-5 alert alert-info">
-    <p>PAKS is set of protocols to outsource and retrieve data with associated keywords in a
-    multiserver environment using your password. The system is device agnostic as high-entropy keys aren't
-    stored on the user side. All you need is a password :).<br>
-    The current setup uses two servers: <br>
-    <ul>
-      <li>{{primary}}</li>
-      <li>{{secondary}}</li>
-    </ul>
-    <h4>Use commas to seperate the keywords</h4>
+    <p style="text-align: justify; font-size : 12px;">This PAKS demonstrator allows users to use a single password registered with two servers to securely outsource files associated with (comma-separated) keywords and later search for and retrieve these files while preserving the privacy of the keywords. PAKS allows users to outsource and retrieve data from different devices. The demonstrator is implemented in JavaScript and can be executed on any platform and any (mobile) browser.
 
     </p>
   </div>
@@ -33,7 +25,7 @@
   <div class="col-md-1 col-lg-1">
   </div>
   <div class="col-md-5 col-lg-5">
-  <h2 class="page-header">Outsource</h2>
+  <h4 class="page-header">Outsource</h4>
     <form method="post" id="outsource">
        <div class="form-group">
         <label>Keyword(s)</label>
@@ -53,7 +45,7 @@
     </form>
   </div>
   <div class="col-md-5 col-lg-5">
-    <h2 class="page-header">Retrieve</h2>
+    <h4 class="page-header">Retrieve</h4>
     <form method="post" id="retrieve">
       <div class="form-group">
         <label>Keyword(s)</label>
@@ -63,14 +55,8 @@
       <button type="submit" class="btn btn-success" disabled="disabled" id="retrievebutton">Retrieve</button>
     </form>
     <div id="dataout" class="alert alert-success">
-    <p>Retrieved Information</p>
+    <p>Retrieved data associated with the keywords: </p>
     <table class="table table-hover" id="databody"> 
-      <thead>
-        <tr>
-          <th>Keyword(s)</th>
-          <th>Data</th>
-        </tr>
-      </thead>
       <tbody>
       </tbody>
     </table>

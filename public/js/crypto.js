@@ -1,11 +1,11 @@
 var q = ecc.sjcl.ecc.curves.c384.r;
 var g = ecc.sjcl.ecc.curves.c384.G;
-/*var h = new ecc.sjcl.ecc.point( 
+var h = new ecc.sjcl.ecc.point( 
 		ecc.sjcl.ecc.curves.c384,
     	new ecc.sjcl.bn.prime.p384("0xe4f93e8f283d098b0707ccec9db5194d0d343242e13ca63a03f0572904313fd72bf8e01a00df32b59132193769486bae"),
     	new ecc.sjcl.bn.prime.p384("0xe987d92f49cfc2d9442f8b789b60e6849f36af19c3e620cd059c15753674adb77fbb3a2e5f3506980ede294706d29100")
-);*/
-var h = g.mult(2); 
+);
+//var h = g.mult(2); 
 
 function Tag(key, string){
 	var hmac = new ecc.sjcl.misc.hmac(ecc.sjcl.codec.hex.fromBits(key), ecc.sjcl.hash.sha256);
@@ -88,6 +88,8 @@ function states(password){
 }
 
 function outsourced(data){
+	var t0 = performance.now();
+
 	var e = new ecc.sjcl.bn.random(ecc.sjcl.ecc.curves.c256.r, 10);
 	var Y = Point(data.server0.y);
 	var Z0 = Point(data.server0.zd);
@@ -105,6 +107,8 @@ function outsourced(data){
 	var mk1 = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + "server1" + "1", ecc.sjcl.codec.hex.toBits(data.server1.salt));
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
+			
+			var t1 = performance.now();
 
 			var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
 			var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
@@ -125,12 +129,17 @@ function outsourced(data){
 				result.myusk1 = myusk1;
 				result.c  = C; 
 				cipherdata.push(result);
-			});		
+			});
+
+			var t2 = performance.now();
+
 			var result =  new Object();		
 			result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
 			result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
 			result.ix = ix;
 			result.data = cipherdata;
+			result.key = t1 - t0;
+			result.outsource =  t2 - t1;
 			return result;
 		}
 		else{
@@ -143,6 +152,9 @@ function outsourced(data){
 }
 
 function retrieveState1(data){
+
+	var t0 = performance.now();
+
 	var e = new ecc.sjcl.bn.random(ecc.sjcl.ecc.curves.c256.r, 10);
 	var Y = Point(data.server0.y);
 	var Z0 = Point(data.server0.zd);
@@ -160,11 +172,17 @@ function retrieveState1(data){
 
 	if(Verify(mk0, A.x.toLocaleString()  + Y.x.toLocaleString() + Z0.x.toLocaleString(), myu0) == "True"){
 		if(Verify(mk1, A.x.toLocaleString() + Y.x.toLocaleString() + Z1.x.toLocaleString(), myu1) == "True"){
+				
+				var t1 = performance.now();
+
 				var t = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + word, word);
 				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var myusk0 = Tag(sk0.key, ecc.sjcl.codec.hex.fromBits(t));
 				var myusk1 = Tag(sk1.key, ecc.sjcl.codec.hex.fromBits(t));
+
+				var t2 = performance.now();
+
 				var result =  new Object();
 				result.t = ecc.sjcl.codec.hex.fromBits(t);
  				result.myusk0 = myusk0;
@@ -172,6 +190,8 @@ function retrieveState1(data){
 				result.salt0 = ecc.sjcl.codec.hex.fromBits(sk0.salt);
 				result.salt1 = ecc.sjcl.codec.hex.fromBits(sk1.salt);
 				result.k = K.x.toLocaleString() + "," + K.y.toLocaleString();
+				result.key = t1 - t0;
+				result.retrieve1 =  t2 - t1;
 				return result;
 		}
 		else{

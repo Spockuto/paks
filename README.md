@@ -2,26 +2,8 @@
 
 Progress
 ========
-* Protocol (Register , Outsource, Retrieve)
-* Multiple keyword Outsource
-* Supports basic data
-
-Things to do
-============
-* File Support
-* Front End to add new files and tabs
-* Write output to Logs
-* Multiple keywords retrieval
-* Reset password
-
-Doubts
-======
-* Using params in Global functions
-* Confirm the functions
-* AES IV problem
-* ix unencrypted
-* salt for KDF
-* h Generator P384 (Yet to be decided)
+* Completed
+* Tiny Modifications
 
 Global Parameters
 =================

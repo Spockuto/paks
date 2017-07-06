@@ -1,6 +1,7 @@
 $.getScript("/js/ecc.min.js");
 $.getScript("/js/crypto.js");
 
+
 window.primary = "localhost:3000"
 window.secondary = "localhost:8000"
 window.files = "";
@@ -58,15 +59,15 @@ function update(finalfuckingdata){
     var count = 0;
     for (var key in finalfuckingdata) {
         if (finalfuckingdata.hasOwnProperty(key)) {
-            var row = "<tr><td>&#9830; ";
+            var row = "<td> ";
             
             for(var i = 0 ; i < finalfuckingdata[key].lengths; i++){
                 if(i != finalfuckingdata[key].lengths - 1)
-                    row+=finalfuckingdata[key][i]+ " &#9830; ";
+                    row+=finalfuckingdata[key][i]+ ", ";
                 else
                     row+=finalfuckingdata[key][i]+ "</td>";
             }
-            $("#databody tbody").append(row + "<td>" + finalfuckingdata[key].data + "</td></tr>");
+            $("#databody tbody").append("<tr><td>" + finalfuckingdata[key].data + "</td>" + row + "</tr>");
             count++;
             if(count == 4){
                  $("#databody tbody").append("<tr class='tabletoggle'><td colspan='2'><a href='javascript:void(0)' onclick='toggler()'\
@@ -100,8 +101,12 @@ $("#register").submit(function (e) {
                 $('#success').text("User Successfully registered");
 
                 console.time('register');
+                var t0 = performance.now();
                 var protocol = register(password);
+                var t1 = performance.now();
+                $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientRegister" + "&time=" +  String(t1 - t0));
                 console.timeEnd('register');
+
 
                 formData = new Object();
                 formData.email = email;
@@ -200,7 +205,11 @@ $("#reset").submit(function (e) {
 
     if($('#password').val() == $('#password2').val()){
         console.time('state');
+        
+        var t0 = performance.now();
         var state = states(password);
+        var t1 = performance.now();
+
         console.timeEnd('state');
         var server1 = {};
         var server0 = {};
@@ -267,7 +276,10 @@ $("#reset").submit(function (e) {
             formData.oldpassword = $("#passwordold").val();
             formData.newpassword = $('#password').val();
             console.log(formData);
+            var t2 = performance.now();
             var resetdata = reset(formData);
+            var t3 = performance.now();
+            $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientReset" + "&time=" +  String(t1 - t0 + t3 - t2));
             console.log(resetdata);
 
                 formData1 = new Object();
@@ -346,7 +358,11 @@ $("#outsource").submit(function (e) {
     var password = $("#password").val();
     var email =  $("#email").val();
     console.time('state');
+
+    var t0 = performance.now();
     var state = states(password);
+    var t1 = performance.now();
+
     console.timeEnd('state');
     var server0 = {};
     var server1 = {};
@@ -482,6 +498,11 @@ $("#outsource").submit(function (e) {
                                 }
                             });
                         });
+                        var temp1 = t1 - t0 + outsource.key;
+                        var temp2  = outsource.outsource;
+                        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" +  String(temp1));
+                        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientOutSource" + "&time=" + String(temp2));
+
                     }
                     else{
                         if(count == 1)
@@ -524,7 +545,11 @@ $("#retrieve").submit(function (e) {
     var count = 0;
 
     console.time('state');
+    
+    var t0 = performance.now();
     var state = states(password);
+    var t1 = performance.now();
+
     console.log(state);
     console.timeEnd('state');
     var finalfuckingdata = new Object();
@@ -651,7 +676,15 @@ $("#retrieve").submit(function (e) {
                     result.email = $("#email").val();
                     result.t = retrieve.t;
                     console.time('retrieveState2');
+
+                    var t2 =  performance.now();
                     var final = retrieveState2(result);
+                    var t3 = performance.now();
+                    var temp1 = t1 - t0 + retrieve.key;
+                    var temp2 = t3 - t2 + retrieve.retrieve1;
+                    $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" + String(temp1));
+                    $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientRetrieval" + "&time=" + String(temp2));
+
                     //console.log(final);
                     console.timeEnd('retrieveState2');
                     for(var propName in final) {
@@ -690,6 +723,7 @@ $("#retrieve").submit(function (e) {
                          $("#dataout").show();
                     }
                 });
+
                    
             }
             else{

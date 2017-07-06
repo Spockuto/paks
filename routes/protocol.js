@@ -1,12 +1,12 @@
 var ecc = require('eccjs');
 var q = ecc.sjcl.ecc.curves.c384.r;
 var g = ecc.sjcl.ecc.curves.c384.G;
-/*var h = new ecc.sjcl.ecc.point( 
+var h = new ecc.sjcl.ecc.point( 
 		ecc.sjcl.ecc.curves.c384,
     	new ecc.sjcl.bn.prime.p384("0xe4f93e8f283d098b0707ccec9db5194d0d343242e13ca63a03f0572904313fd72bf8e01a00df32b59132193769486bae"),
     	new ecc.sjcl.bn.prime.p384("0xe987d92f49cfc2d9442f8b789b60e6849f36af19c3e620cd059c15753674adb77fbb3a2e5f3506980ede294706d29100")
-);*/
-var h = g.mult(2);
+);
+//var h = g.mult(2);
 
 var express = require('express');
 var router = express.Router();
@@ -17,6 +17,11 @@ const myCache = new NodeCache( { stdTTL: 100, checkperiod: 120 } );
 var formidable = require('formidable');
 var fs = require('fs');
 var path = require('path');
+var now = require("performance-now");
+
+var logger = fs.createWriteStream('log.txt', {
+  flags: 'a'
+})
 
 function ServerRetryStrategy(err, response, body){
   return err || !body;
@@ -114,11 +119,15 @@ router.post('/reset', function(req, res){
 
 router.post('/state', function(req, res){
 	console.time("state");
+
 	var email = req.body.email;
+	
+	var t0 = now();
 	var A = Point(req.body.a);
 	var sd = new ecc.sjcl.bn.random(q, 10);
 	var yd = new ecc.sjcl.bn.random(q, 10);
 	var Yd = g.mult(yd);
+	var t1 = now();
 
 	Register.getRegisterByEmail(email, function(err, register){
    		if(err) throw err;
@@ -126,6 +135,8 @@ router.post('/state', function(req, res){
    			res.json({message : 'Unknown User'});
    		}
    		else{
+   			var t2 = now();
+
    			var kd = Point(register.kd);
    			var gr1 = Point(register.gr1);
    			var gr2 = Point(register.gr2);
@@ -137,6 +148,9 @@ router.post('/state', function(req, res){
 			var Rd =  gr2.mult(yd);
 			var hash = ecc.sjcl.codec.hex.fromBits(ecc.sjcl.hash.sha256.hash(Yd.x.toLocaleString() + Rd.x.toLocaleString()));
 			var cd = g.mult2(sd , new ecc.sjcl.bn.prime.p384(hash) , h);
+			
+			var t3 = now();
+
 			var success = myCache.set(register.gr1, cd.x.toLocaleString() + ',' + cd.y.toLocaleString());
 			
 			success = myCache.set(register.gr2, {
@@ -154,6 +168,9 @@ router.post('/state', function(req, res){
 								body: { 'key' : register.gr2}},
     							function (error, response, body) {
         							if (!error && response.statusCode == 200) {	
+        								
+        								var t4 = now();
+
         								var Y1d = Point(body.yd);
         								var R1d = Point(body.rd);
         								var s1d =  new ecc.sjcl.bn.prime.p384(body.sd);
@@ -178,7 +195,12 @@ router.post('/state', function(req, res){
  											}
  											else{
  												var myud = Tag(ecc.sjcl.codec.hex.toBits(mkd), A.x.toLocaleString() + Y.x.toLocaleString() + Zd.x.toLocaleString());
- 											}								
+ 											}
+
+ 											var t5 = now();
+ 											
+ 											logger.write("ServerKeyGeneration------" + String( t1 - t0 + t3 - t2 + t5 - t4) +"\n");
+
 											result.myud = myud;
 											result.y = Y.x.toLocaleString() + ',' + Y.y.toLocaleString();
 											result.zd = Zd.x.toLocaleString() + ',' + Zd.y.toLocaleString();
@@ -208,6 +230,7 @@ router.post('/state', function(req, res){
 
 router.post('/outsource', function(req, res){
 	console.time("outsource");
+	var t0 = now();
 	var C = req.body.c;
 	var ix = req.body.ix;
 	var myuskd = req.body.myuskd;
@@ -228,6 +251,8 @@ router.post('/outsource', function(req, res){
    			var Y = Point(cache.Y);
    			var skd = ecc.sjcl.misc.pbkdf2(mkd + A.x.toLocaleString() + Y.x.toLocaleString() + "2" , ecc.sjcl.codec.hex.toBits(salt));
    			if(Verify(skd, C + ix, myuskd) == "True"){
+   				var t1 = now();
+   				logger.write("ServerOutSource------" + String(t1 - t0) +"\n");
    				var newStorage = new Storage({
 					email : email,
 					c : C,
@@ -255,6 +280,9 @@ router.post('/outsource', function(req, res){
 
 router.post('/retrieve', function(req, res){
 	console.time("retrieve");
+
+	var t0 = now();
+	
 	var t = req.body.t;
 	var myuskd = req.body.myuskd;
 	var salt = req.body.salt;
@@ -288,6 +316,8 @@ router.post('/retrieve', function(req, res){
 							result.push({c : index.c, ix : index.ix});
 						}     
                     });
+                    var t1 = now();
+                    logger.write("ServerRetrieve------" + String(t1 - t0) +"\n");
                     console.timeEnd("retrieve");
 					res.json({message : "True", result : result});
 				});
@@ -325,4 +355,10 @@ router.get('/download', function(req, res){
   var file = __dirname + '/uploads/'+ req.query.file;
   res.download(file);
 });
+
+router.get('/log', function(req, res){
+	logger.write(req.query.state + "------" + req.query.time +"\n");
+	res.json({});
+})
+
 module.exports = router;
