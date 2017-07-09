@@ -3,7 +3,6 @@
 Progress
 ========
 * Completed
-* Tiny Modifications
 
 Global Parameters
 =================

@@ -6,7 +6,6 @@ var h = new ecc.sjcl.ecc.point(
     	new ecc.sjcl.bn.prime.p384("0xe4f93e8f283d098b0707ccec9db5194d0d343242e13ca63a03f0572904313fd72bf8e01a00df32b59132193769486bae"),
     	new ecc.sjcl.bn.prime.p384("0xe987d92f49cfc2d9442f8b789b60e6849f36af19c3e620cd059c15753674adb77fbb3a2e5f3506980ede294706d29100")
 );
-//var h = g.mult(2);
 
 var express = require('express');
 var router = express.Router();
@@ -49,6 +48,10 @@ function Point(string){
 	return new ecc.sjcl.ecc.point( ecc.sjcl.ecc.curves.c384, 
 		     new ecc.sjcl.bn.prime.p384(string.split(",")[0]),
 		     new ecc.sjcl.bn.prime.p384(string.split(",")[1]));
+}
+
+function IV(email, ctr){
+	return ecc.sjcl.hash.sha256.hash(email + String(ctr));
 }
 
 router.post('/register', function(req, res){
@@ -200,7 +203,7 @@ router.post('/state', function(req, res){
  											var t5 = now();
  											
  											logger.write("ServerKeyGeneration------" + String( t1 - t0 + t3 - t2 + t5 - t4) +"\n");
-
+ 											myCache.set(email + "key", {time : t1 - t0 + t3 - t2 + t5 - t4 });
 											result.myud = myud;
 											result.y = Y.x.toLocaleString() + ',' + Y.y.toLocaleString();
 											result.zd = Zd.x.toLocaleString() + ',' + Zd.y.toLocaleString();
@@ -236,6 +239,7 @@ router.post('/outsource', function(req, res){
 	var myuskd = req.body.myuskd;
 	var salt = req.body.salt;
 	var email = req.body.email;
+	var ctr = req.body.ctr;
 
 	Register.getRegisterByEmail(email, function(err, register){
    		if(err) throw err;
@@ -252,11 +256,19 @@ router.post('/outsource', function(req, res){
    			var skd = ecc.sjcl.misc.pbkdf2(mkd + A.x.toLocaleString() + Y.x.toLocaleString() + "2" , ecc.sjcl.codec.hex.toBits(salt));
    			if(Verify(skd, C + ix, myuskd) == "True"){
    				var t1 = now();
-   				logger.write("ServerOutSource------" + String(t1 - t0) +"\n");
+   				if(myCache.get(email + "outsource"))
+   					var cache = myCache.set(email + "outsource", {time : t1 - t0 + myCache.get(email + "outsource").time});
+   				else
+   					var cache = myCache.set(email + "outsource", {time : t1 - t0});
+
+   				logger.write("ServerOutSourcePerKeywordPerData------" + String(t1 - t0) +"\n");
+   				logger.write("AdditiveServerOutSourcePerKeywordPerData------" + String(myCache.get(email + "outsource").time) +"\n");
+   				logger.write("TotalAdditiveServerOutSourcePerKeywordPerData------" + String(myCache.get(email + "outsource").time + myCache.get(email + "key").time) +"\n");
    				var newStorage = new Storage({
 					email : email,
 					c : C,
-					ix : ix	
+					ix : ix,
+					ctr : ctr	
 				});
 				Storage.StorageUser(newStorage, function(err, register){
 					if(err) {
@@ -311,13 +323,19 @@ router.post('/retrieve', function(req, res){
    					register.forEach(function(index){
    						var C = index.c.split(",");
    						var prp = new ecc.sjcl.cipher.aes(ecc.sjcl.codec.hex.toBits(t));
-						var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), "")).substring(0,64);
+						var v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), IV(email, index.ctr))).substring(0,64);
 						if( v == C[1]){
-							result.push({c : index.c, ix : index.ix});
+							result.push({c : index.c, ix : index.ix, ctr : index.ctr});
 						}     
                     });
                     var t1 = now();
-                    logger.write("ServerRetrieve------" + String(t1 - t0) +"\n");
+                    if(myCache.get(email + "retrieve"))
+   						var cache = myCache.set(email + "retrieve", {time : t1 - t0 + myCache.get(email + "retrieve").time});
+   					else
+   						var cache = myCache.set(email + "retrieve", {time : t1 - t0});
+   					logger.write("ServerRetrievePerKeywordAllData------" + String(t1 - t0) +"\n");
+   					logger.write("AdditiveServerRetrievePerKeywordAllData------" + String(myCache.get(email + "retrieve").time) +"\n");
+   					logger.write("TotalAdditiveServerRetrievePerKeywordAllData------" + String(myCache.get(email + "retrieve").time + myCache.get(email + "key").time) +"\n");
                     console.timeEnd("retrieve");
 					res.json({message : "True", result : result});
 				});

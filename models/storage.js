@@ -11,6 +11,9 @@ var StorageSchema = mongoose.Schema({
 	},
 	ix: {
 		type: String
+	},
+	ctr: {
+		type: String
 	}
 });
 

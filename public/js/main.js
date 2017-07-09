@@ -1,6 +1,20 @@
 $.getScript("/js/ecc.min.js");
 $.getScript("/js/crypto.js");
 
+ $.fn.allchange = function (callback) {
+        var me = this;
+        var last = "";
+        var infunc = function () {
+            var text = $(me).val();
+            if (text != last) {
+                last = text;
+                callback();
+            }
+            setTimeout(infunc, 100);
+        }
+        setTimeout(infunc, 100);
+    };
+
 
 window.primary = "localhost:3000"
 window.secondary = "localhost:8000"
@@ -33,6 +47,15 @@ $('#password, #email').bind('keyup', function() {
     }
 });
 
+$("#email").allchange(function () {
+    $("#password").allchange(function () {
+        if(allFilled()) {
+            $('#outsourcebutton').removeAttr('disabled');
+            $('#retrievebutton').removeAttr('disabled');
+        }
+    });
+});
+
 
 function allFilled(){
     var empty = false;
@@ -55,19 +78,19 @@ function toggler(){
     $('.tabletoggle').nextUntil('tr.header').slideToggle(100);
 }
 
-function update(finalfuckingdata){
+function update(finaldata){
     var count = 0;
-    for (var key in finalfuckingdata) {
-        if (finalfuckingdata.hasOwnProperty(key)) {
+    for (var key in finaldata) {
+        if (finaldata.hasOwnProperty(key)) {
             var row = "<td> ";
             
-            for(var i = 0 ; i < finalfuckingdata[key].lengths; i++){
-                if(i != finalfuckingdata[key].lengths - 1)
-                    row+=finalfuckingdata[key][i]+ ", ";
+            for(var i = 0 ; i < finaldata[key].lengths; i++){
+                if(i != finaldata[key].lengths - 1)
+                    row+=finaldata[key][i]+ ", ";
                 else
-                    row+=finalfuckingdata[key][i]+ "</td>";
+                    row+=finaldata[key][i]+ "</td>";
             }
-            $("#databody tbody").append("<tr><td>" + finalfuckingdata[key].data + "</td>" + row + "</tr>");
+            $("#databody tbody").append("<tr><td>" + finaldata[key].data + "</td>" + row + "</tr>");
             count++;
             if(count == 4){
                  $("#databody tbody").append("<tr class='tabletoggle'><td colspan='2'><a href='javascript:void(0)' onclick='toggler()'\
@@ -331,11 +354,11 @@ $("#reset").submit(function (e) {
                             $('#danger').show();
                         }
                     });
+            if($("#danger").text() == "")
+                $("#success").empty().append("<p>Protocol Successful</p>").show();
+            else
+                $("#danger").show();
         });
-        if($("#danger").text() == "")
-            $("#success").empty().append("<p>Protocol Successful</p>").show();
-        else
-            $("#danger").show();
         $('#danger').hide();
     }
     else{
@@ -426,29 +449,31 @@ $("#outsource").submit(function (e) {
                     FileData.append('file', window.files[i], window.files[i].name);
                 }
                 //console.log(data);
-                data.forEach(function(eachdata){
-                    var count = 0;
-                    formData = new Object();
-                    formData.email = $("#email").val();
-                    formData.a = state.A;
-                    formData.smalla = state.a;
-                    formData.server0 = server0;
-                    formData.server1 = server1;
-                    formData.tag = tag;
-                    formData.data = eachdata;
-                    console.time('outsource');
-                    var outsource = outsourced(formData);
-                    console.timeEnd('outsource');
-                   // console.log(outsource);
-
-                    if(outsource.result != "Tag 1 Verify Failed" && outsource.result != "Tag 2 Verify Failed"){
-                        outsource.data.forEach(function(cipherdata){
+                formData = new Object();
+                formData.email = $("#email").val();
+                formData.a = state.A;
+                formData.smalla = state.a;
+                formData.server0 = server0;
+                formData.server1 = server1;
+                formData.tag = tag;
+                formData.data = data;
+                console.time('outsource');
+                var outsource = outsourced(formData);
+                var temp1 = t1 - t0 + outsource.key;
+                var temp4 = 0;
+                $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" +  String(temp1));
+                console.timeEnd('outsource');
+                
+                if(outsource.result != "Tag 1 Verify Failed" && outsource.result != "Tag 2 Verify Failed"){
+                    outsource.outsource.forEach(function(outsourcedata){
+                        outsourcedata.data.forEach(function(cipherdata){
                             formData = new Object();
                             formData.email = email;
                             formData.c = cipherdata.c;
-                            formData.ix = outsource.ix;
+                            formData.ix = outsourcedata.ix;
                             formData.myuskd = cipherdata.myusk0;
-                            formData.salt = outsource.salt0;
+                            formData.salt = outsourcedata.salt0;
+                            formData.ctr = cipherdata.ctr;
                             formData.isfile = "False";
                           //  console.log(formData);
 
@@ -474,9 +499,10 @@ $("#outsource").submit(function (e) {
                             formData = new Object();
                             formData.email = email;
                             formData.c = cipherdata.c;
-                            formData.ix = outsource.ix;
+                            formData.ix = outsourcedata.ix;
                             formData.myuskd = cipherdata.myusk1;
-                            formData.salt = outsource.salt1;
+                            formData.salt = outsourcedata.salt1;
+                            formData.ctr = cipherdata.ctr;
                             formData.isfile = "False";
 
                             $.ajax({
@@ -498,19 +524,18 @@ $("#outsource").submit(function (e) {
                                 }
                             });
                         });
-                        var temp1 = t1 - t0 + outsource.key;
-                        var temp2  = outsource.outsource;
-                        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" +  String(temp1));
-                        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientOutSource" + "&time=" + String(temp2));
 
-                    }
-                    else{
-                        if(count == 1)
-                            $("#danger").append("Tag Verification Failed. Dont tryna cheat mate");
-                        count++;
-                        $('#danger').show();
-                    }
-                });
+                        var temp2  = outsourcedata.outsource;
+                        var temp3 = temp1 + temp2;
+                        temp4 = temp4 + outsourcedata.outsource;
+                        $.get( "http://" + window.primary + "/protocol/log?state=" + "TotalClientOutsourcePerDataAllKeywords" + "&time=" +  String(temp3));
+                        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientOutSourcePerDataAllKeywords" + "&time=" + String(temp2));
+                    });
+                }
+                else{
+                    $('#danger').show();
+                    $("#danger").append("Tag Verification Failed. Either username or password is incorrect");
+                }
                 FileData.append('email' , email);
                 $.ajax({
                       url: "http://" + window.primary + "/protocol/upload",
@@ -529,6 +554,7 @@ $("#outsource").submit(function (e) {
                     $("#danger").show();
                 //$('#success').show();
                 $('#image1').hide();
+                $.get( "http://" + window.primary + "/protocol/log?state=" + "TotalClientOutsourceAllDataAllKeywords" + "&time=" +  String(temp1 + temp4));
     });
 });
 
@@ -552,7 +578,7 @@ $("#retrieve").submit(function (e) {
 
     console.log(state);
     console.timeEnd('state');
-    var finalfuckingdata = new Object();
+    var finaldata = new Object();
     var server0 = {};
     var server1 = {};
     formData = new Object();
@@ -605,31 +631,35 @@ $("#retrieve").submit(function (e) {
         })
         ).then(function(){
         
-        tag.split(",").forEach(function(tags){
-            formData.smalla = state.a;
-            formData.server0 = server0;
-            formData.server1 = server1;
+        
+        formData.smalla = state.a;
+        formData.server0 = server0;
+        formData.server1 = server1;
+        formData.tag = tag.split(",");
+        console.log(formData);
+        console.time('retrieveState1');
+        var retrieve = retrieveState1(formData);
+        console.timeEnd('retrieveState1');
+        console.log(retrieve);
+        var temp1 = t1 - t0 + retrieve.key;
+        var temp4 = 0;
+        $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" + String(temp1));
             
-            formData.tag = tags;
-            console.time('retrieveState1');
-            var retrieve = retrieveState1(formData);
-            console.timeEnd('retrieveState1');
-           // console.log(retrieve);
-
-            if(retrieve.result != "Tag 1 Verify Failed" && retrieve.result != "Tag 2 Verify Failed"){
+        if(retrieve.result != "Tag 1 Verify Failed" && retrieve.result != "Tag 2 Verify Failed"){
+            retrieve.retrieve.forEach(function(retrievedata){
                 var result = {};
 
                 formData1 = new Object();
                 formData1.email = email;
-                formData1.t = retrieve.t;
-                formData1.myuskd = retrieve.myusk0;
-                formData1.salt = retrieve.salt0;
+                formData1.t = retrievedata.t;
+                formData1.myuskd = retrievedata.myusk0;
+                formData1.salt = retrievedata.salt0;
                 
                 formData2 = new Object();
                 formData2.email = email;
-                formData2.t = retrieve.t;
-                formData2.myuskd = retrieve.myusk1;
-                formData2.salt = retrieve.salt1;    
+                formData2.t = retrievedata.t;
+                formData2.myuskd = retrievedata.myusk1;
+                formData2.salt = retrievedata.salt1;    
                     
                 $.when(
                         $.ajax({
@@ -671,78 +701,76 @@ $("#retrieve").submit(function (e) {
                             }
                         })
                 ).then(function(){
-                    //finalfuckingdata[tags] = ;
-                    result.k = retrieve.k;
+                    //finaldata[tags] = ;
+                    result.k = retrievedata.k;
                     result.email = $("#email").val();
-                    result.t = retrieve.t;
+                    result.t = retrievedata.t;
                     console.time('retrieveState2');
 
                     var t2 =  performance.now();
                     var final = retrieveState2(result);
                     var t3 = performance.now();
-                    var temp1 = t1 - t0 + retrieve.key;
-                    var temp2 = t3 - t2 + retrieve.retrieve1;
-                    $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientKeyGeneration" + "&time=" + String(temp1));
-                    $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientRetrieval" + "&time=" + String(temp2));
+                    var temp2 = t3 - t2 + retrievedata.retrieve;
+                    var temp3 = temp1 + temp2;
+                    temp4 =  temp4 + temp2;
+                    $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientRetrievalPerKeywordAllData" + "&time=" + String(temp2));
+                    $.get( "http://" + window.primary + "/protocol/log?state=" + "TotalClientRetrievalPerKeywordAllData" + "&time=" + String(temp3));
 
-                    //console.log(final);
+                    console.log(final);
+                    var tags = retrievedata.tag;
                     console.timeEnd('retrieveState2');
                     for(var propName in final) {
                         if(final.hasOwnProperty(propName)) {
                             var propValue = final[propName];
                             if(propValue.split(",")[0] == email){
                                 var name = propValue.replace(email + "," , "");
-                                if(finalfuckingdata.hasOwnProperty(name)){
-                                    finalfuckingdata[name].push(tags);
-                                    finalfuckingdata[name].lengths++;
+                                if(finaldata.hasOwnProperty(name)){
+                                    finaldata[name].push(tags);
+                                    finaldata[name].lengths++;
 
                                 }
                                 else{
-                                    finalfuckingdata[name] = [tags];
-                                    finalfuckingdata[name].lengths = 1;
-                                    finalfuckingdata[name].data = "<a href='http://" + window.primary +"/protocol/download?file=" + name +"'>" + name.substring(0,15) + ".." + re.exec(name)[1] + "</a>";
+                                    finaldata[name] = [tags];
+                                    finaldata[name].lengths = 1;
+                                    finaldata[name].data = "<a href='http://" + window.primary +"/protocol/download?file=" + name +"'>" + name.substring(0,15) + ".." + re.exec(name)[1] + "</a>";
                                 }
                             }
                             else{
-                                if(finalfuckingdata.hasOwnProperty(propValue)){
-                                    finalfuckingdata[propValue].push(tags);
-                                    finalfuckingdata[propValue].lengths++;
+                                if(finaldata.hasOwnProperty(propValue)){
+                                    finaldata[propValue].push(tags);
+                                    finaldata[propValue].lengths++;
                                 }
                                 else{
-                                    finalfuckingdata[propValue] = [tags];
-                                    finalfuckingdata[propValue].lengths = 1;
-                                    finalfuckingdata[propValue].data = propValue;
+                                    finaldata[propValue] = [tags];
+                                    finaldata[propValue].lengths = 1;
+                                    finaldata[propValue].data = propValue;
                                 }
                             }
                         }
                     }
                     if(tag.split(",").pop() == tags){
-                        console.log(finalfuckingdata);
-                         update(finalfuckingdata);
-                         console.log(finalfuckingdata);
+                        console.log(finaldata);
+                         update(finaldata);
+                         console.log(finaldata);
                          $("#dataout").show();
+                         $.get( "http://" + window.primary + "/protocol/log?state=" + "TotalClientRetrievalAllKeywordAllData" + "&time=" + String(temp1 + temp4));
                     }
                 });
-
-                   
-            }
-            else{
-                if(count == 1)
-                    $("#danger").append("Tag Verification Failed. Dont tryna cheat mate");
-                count++;
-                $('#danger').show();
-                $('#image2').hide();
-            }
-
-        });
-
+            });
+        }
+        else{
+            $("#danger").append("Tag Verification Failed. Either Username or password is incorrect.");
+            $('#danger').show();
+            $('#image2').hide();
+        }
         if($("#danger").text() == "")
             $("#success").empty().append("<p>Protocol Successful</p>").show();
         else
             $("#danger").show();
 
          //$('#success').show();
-        $('#image2').hide();        
+        $('#image2').hide(); 
+               
     });
     
 });
