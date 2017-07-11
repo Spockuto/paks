@@ -1,7 +1,4 @@
-$.getScript("/js/ecc.min.js");
-$.getScript("/js/crypto.js");
-
- $.fn.allchange = function (callback) {
+$.fn.allchange = function (callback) {
         var me = this;
         var last = "";
         var infunc = function () {
@@ -18,6 +15,8 @@ $.getScript("/js/crypto.js");
 
 window.primary = "localhost:3000"
 window.secondary = "localhost:8000"
+//window.primary =  "eec95e52.ngrok.io"
+//window.secondary = "47267495.ngrok.io"
 window.files = "";
 var re = /(?:\.([^.]+))?$/;
 
@@ -103,12 +102,11 @@ function update(finaldata){
 
 $("#register").submit(function (e) {
     
-    $('#danger').empty();
-    $('#success').empty();
+    $('#danger').empty().hide();
+    $('#success').empty().hide();
 
     e.preventDefault();
     var form = $('#register');
-    var username = $("#username").val();
     var password = $("#password").val();
     var email = $("#em").val();
     $.ajax({
@@ -217,10 +215,10 @@ $("#register").submit(function (e) {
 });
 
 $("#reset").submit(function (e) {
-    
-    $('#danger').empty();
-    $('#success').empty();
 
+    $('#danger').empty().hide();
+    $('#success').empty().hide();
+    $('#image').show();
     e.preventDefault();
     var form = $('#reset');
     var password = $("#passwordold").val();
@@ -257,12 +255,14 @@ $("#reset").submit(function (e) {
                 }
                 else{
                     $("#danger").append("<p>An error occured in Outsource Server 0 Step 1 (Server)</p>");
-                    $('#danger').show();
+                    //$('#danger').show();
+                     $('#image').hide();
                 }
             },
             error: function (data){
                 $("#danger").append("<p>An error occured in Outsource Server 0 Step 1 (Request)</p>");
-                $('#danger').show();
+                //$('#danger').show();
+                $('#image').hide();
             }
         }),
         $.ajax({
@@ -281,12 +281,14 @@ $("#reset").submit(function (e) {
                 }
                 else{
                     $("#danger").append("<p>An error occured in Outsource Server 1 Step 1 (Server)</p>");
-                    $('#danger').show();
+                    //$('#danger').show();
+                    $('#image').hide();
                 }
             },
             error: function (data){
                 $("#danger").append("<p>An error occured in Outsource Server 1 Step 1 (Request)</p>");
-                $('#danger').show();
+                //$('#danger').show();
+                $('#image').hide();
             }
         })
         ).then(function(){
@@ -304,7 +306,7 @@ $("#reset").submit(function (e) {
             var t3 = performance.now();
             $.get( "http://" + window.primary + "/protocol/log?state=" + "ClientReset" + "&time=" +  String(t1 - t0 + t3 - t2));
             console.log(resetdata);
-
+            if(resetdata.result != "Tag 1 Verify Failed" && resetdata.result != "Tag 2 Verify Failed"){
                 formData1 = new Object();
                 formData1.email = email;
                 formData1.cpi = resetdata.cpi;
@@ -327,12 +329,14 @@ $("#reset").submit(function (e) {
                             }
                             else{
                                 $("#danger").append("<p>An error occured in Reset Server 0 Step 2 (Server)</p>");
-                                $('#danger').show();
+                                //$('#danger').show();
+                                $('#image').hide();
                             }
                         },
                         error: function (data){
                             $("#danger").append("<p>An error occured in Reset Server 0 Step 2 (Request)</p>");
-                            $('#danger').show();
+                            //$('#danger').show();
+                            $('#image').hide();
                         }
                     });
 
@@ -346,20 +350,30 @@ $("#reset").submit(function (e) {
                             }
                             else{
                                 $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Server)</p>");
-                                $('#danger').show();
+                                //$('#danger').show();
+                                $('#image').hide();
                             }
                         },
                         error: function (data){
                             $("#danger").append("<p>An error occured in Retrieve Server 1 Step 2 (Request)</p>");
-                            $('#danger').show();
+                            //$('#danger').show();
+                            $('#image').hide();
                         }
                     });
             if($("#danger").text() == "")
                 $("#success").empty().append("<p>Protocol Successful</p>").show();
             else
-                $("#danger").show();
-        });
+                $("#danger").empty().append("<p>Please check you credentials</p>").show();
+            $('#image').hide();
+        }
+        else{
+            $('#danger').show();
+            $("#danger").empty().append("Tag Verification Failed. Either username or password is incorrect");
+            $('#image').hide();
+        }
+    });
         $('#danger').hide();
+        $('#image').hide();
     }
     else{
         $('#image').hide();
@@ -371,8 +385,9 @@ $("#reset").submit(function (e) {
 
 
 $("#outsource").submit(function (e) {
-    $('#danger').empty();
-    $('#success').empty();
+     
+    $('#danger').empty().hide();
+    $('#success').empty().hide();
 
     e.preventDefault();
     $('#image1').show(); 
@@ -559,9 +574,10 @@ $("#outsource").submit(function (e) {
 });
 
 $("#retrieve").submit(function (e) {
+
     $('#databody tbody').empty();
-    $('#danger').empty();
-    $('#success').empty();
+    $('#danger').empty().hide();
+    $('#success').empty().hide();
 
     e.preventDefault();
     $('#image2').show(); 

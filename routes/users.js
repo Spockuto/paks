@@ -4,6 +4,7 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 
 var User = require('../models/user');
+var Register = require('../models/register');
 
 // Register
 router.get('/register', function(req, res){
@@ -22,14 +23,12 @@ router.get('/login', function(req, res){
 // Register User
 router.post('/register', function(req, res){
 	var email = req.body.email;
-	var username = req.body.username;
 	var password = req.body.password;
 	var password2 = req.body.password2;
 
 	// Validation
 	req.checkBody('email', 'Email is required').notEmpty();
 	req.checkBody('email', 'Email is not valid').isEmail();
-	req.checkBody('username', 'Username is required').notEmpty();
 	req.checkBody('password', 'Password is required').notEmpty();
 	req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
 
@@ -39,23 +38,15 @@ router.post('/register', function(req, res){
 		res.json({success : "False", message: errors });
 	} 
 	else {
-		User.getUserByUsername(username, function(err, user){
+   	Register.getRegisterByEmail(email, function(err, user){
    			if(err) throw err;
    			if(user){
-   				res.json({success : "False", message: "Username exists"});
+   				res.json({success : "False", message: "Email exists" });
    			}
    			else{
-   				User.getUserByEmail(email, function(err, user){
-   					if(err) throw err;
-   					if(user){
-   						res.json({success : "False", message: "Email exists" });
-   					}
-   					else{
-						res.json({success : "True"});	
-   					}
-				});
-   			}		
-		});
+					res.json({success : "True"});	
+   			}
+			});
    	}
 });
 

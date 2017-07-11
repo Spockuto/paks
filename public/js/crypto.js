@@ -238,7 +238,7 @@ function retrieveState2(data){
 		v =  ecc.sjcl.codec.hex.fromBits(ecc.sjcl.mode.gcm.encrypt(prp, ecc.sjcl.codec.hex.toBits(C[0]), IV(data.email, index.ctr))).substring(0,64);
 
 		if(v == C[1] && Verify(mku, C[0] + v + index.ix, C[2]) == "True" ){
-			if(result[C[0]]){	
+			if(result[C[2]]){	
 				result[C[2]]+=index.ix;
 			}
 			else{
